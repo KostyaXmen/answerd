@@ -1,0 +1,11 @@
+# Local build artifacts
+/daemon/answerd
+/answerd
+*.test
+
+# Private/local data
+/questions.txt
+
+# Logs and temp files
+*.log
+*.tmp

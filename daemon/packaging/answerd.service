@@ -1,0 +1,15 @@
+[Unit]
+Description=Answer checker daemon (clipboard -> DeepSeek)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/answerd run
+Restart=on-failure
+RestartSec=3
+# Set the key here, or put it in ~/.config/answerd/config.json.
+# Environment=DEEPSEEK_API_KEY=sk-...
+
+[Install]
+WantedBy=default.target

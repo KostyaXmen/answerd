@@ -1,0 +1,14 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "answerd",
+        "Name": "Answerd Clock",
+        "Description": "Digital clock that shows the answer instead of the year (hold Ctrl)",
+        "Category": "Date and Time",
+        "Icon": "preferences-system-time",
+        "License": "GPL-2.0+",
+        "Version": "0.1"
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

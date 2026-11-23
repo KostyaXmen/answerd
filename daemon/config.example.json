@@ -1,0 +1,17 @@
+{
+  "api_key": "sk-...",
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "temperature": 0,
+  "max_tokens": 16,
+  "thinking": false,
+  "web_search": false,
+  "min_text_length": 4,
+  "poll_interval_ms": 350,
+  "request_timeout_sec": 30,
+  "state_file": "~/.cache/answerd/latest.json",
+  "history_file": "~/.cache/answerd/history.jsonl",
+  "image_dir": "~/.cache/answerd/images",
+  "inbox_dir": "~/.cache/answerd/inbox",
+  "log_file": "~/.cache/answerd/answerd.log"
+}

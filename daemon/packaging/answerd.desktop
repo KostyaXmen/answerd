@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Answerd
+Comment=Clipboard -> DeepSeek answer daemon
+Exec=/bin/sh -c "exec ~/.local/bin/answerd run"
+X-KDE-autostart-phase=1
+NoDisplay=true
