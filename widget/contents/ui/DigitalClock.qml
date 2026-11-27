@@ -116,6 +116,91 @@ MouseArea {
     }
 
     property string lastDate: ""
+
+    // Date format pattern in which the year marks the answer's place. Using
+    // the user's own format keeps the answer where the year normally is,
+    // regardless of locale (dd.MM.yyyy, M/d/yy, yyyy-MM-dd, ...).
+    function answerDateFormat() {
+        if (Plasmoid.configuration.dateFormat === "custom") {
+            const custom = Plasmoid.configuration.customDateFormat;
+            if (custom !== "") {
+                return custom;
+            }
+        } else if (Plasmoid.configuration.dateFormat === "isoDate") {
+            return "yyyy-MM-dd";
+        } else if (Plasmoid.configuration.dateFormat === "longDate") {
+            return Qt.locale().dateFormat(Locale.LongFormat);
+        }
+        return Qt.locale().dateFormat(Locale.ShortFormat);
+    }
+
+    // Whether the format has a year token outside quoted literals.
+    function hasYearToken(format) {
+        let inQuote = false;
+        for (const ch of format) {
+            if (ch === "'") {
+                inQuote = !inQuote;
+            } else if (!inQuote && (ch === "y" || ch === "Y")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Replaces the year token (y, yy, yyyy) with the answer, leaving quoted
+    // literals such as 'г.' untouched.
+    function replaceYearToken(format, answer) {
+        let result = "";
+        let inQuote = false;
+        for (let i = 0; i < format.length; ++i) {
+            const ch = format[i];
+            if (ch === "'") {
+                inQuote = !inQuote;
+                result += ch;
+            } else if (!inQuote && (ch === "y" || ch === "Y")) {
+                while (i + 1 < format.length && format[i + 1] === ch) {
+                    ++i;
+                }
+                result += answer;
+            } else {
+                result += ch;
+            }
+        }
+        return result;
+    }
+
+    // Whether the year token comes before any day/month token, e.g.
+    // "yyyy-MM-dd" or "yyyy. MM. dd.". For those formats the answer is
+    // right-aligned so the month/day part does not move when the year shrinks.
+    function yearTokenIsFirst(format) {
+        let inQuote = false;
+        for (const ch of format) {
+            if (ch === "'") {
+                inQuote = !inQuote;
+                continue;
+            }
+            if (inQuote) {
+                continue;
+            }
+            if (ch === "y" || ch === "Y") {
+                return true;
+            }
+            if (ch === "d" || ch === "M") {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    function formatWithAnswer(answer) {
+        const format = main.answerDateFormat();
+        if (!main.hasYearToken(format)) {
+            // The user's format has no year, so there is nothing to replace.
+            return main.dateFormatter(clock.dateTime) + " " + answer;
+        }
+        return Qt.locale().toString(clock.dateTime, main.replaceYearToken(format, answer));
+    }
+
     property int tzOffset
 
     // This is the index in the list of user selected time zones
@@ -216,7 +301,7 @@ MouseArea {
 
                 contentItem.height: timeLabel.height + (contentItem.Plasmoid.configuration.showDate || timeZoneLabel.visible ? 0.8 * timeLabel.height : 0)
                 contentItem.width: Math.max(timeLabel.width + (contentItem.Plasmoid.configuration.showDate ? timeZoneLabel.paintedWidth : 0),
-                                timeZoneLabel.paintedWidth, dateLabel.paintedWidth) + Kirigami.Units.largeSpacing
+                                timeZoneLabel.paintedWidth, dateLabel.width) + Kirigami.Units.largeSpacing
 
                 labelsGrid.rows: labelsGrid.Plasmoid.configuration.showDate ? 1 : 2
 
@@ -229,7 +314,10 @@ MouseArea {
                 timeZoneLabel.font.pixelSize: timeZoneLabel.height
 
                 dateLabel.height: 0.8 * timeLabel.height
-                dateLabel.width: dateLabel.paintedWidth
+                // Keep the normal (full-year) width so the panel does not resize
+                // when the answer replaces the year.
+                dateLabel.width: contentItem.Plasmoid.configuration.showDate ? Math.max(dateLabel.paintedWidth, dateNormalMetrics.advanceWidth) : 0
+                dateLabel.horizontalAlignment: main.yearTokenIsFirst(main.answerDateFormat()) ? Text.AlignRight : Text.AlignLeft
                 dateLabel.verticalAlignment: Text.AlignVCenter
                 dateLabel.font.pixelSize: dateLabel.height
 
@@ -575,6 +663,20 @@ MouseArea {
         font.italic: timeLabel.font.italic
     }
 
+    // Width of the date as it is normally rendered (with the full year). It
+    // keeps the widget width stable while Ctrl replaces the year with a
+    // shorter answer.
+    TextMetrics {
+        id: dateNormalMetrics
+
+        font.family: dateLabel.font.family
+        font.weight: dateLabel.font.weight
+        font.italic: dateLabel.font.italic
+        font.pixelSize: dateLabel.font.pixelSize
+
+        text: main.dateFormatter(clock.dateTime)
+    }
+
     // Qt's QLocale does not offer any modular time creating like Klocale did
     // eg. no "gimme time with seconds" or "gimme time without seconds and with time zone".
     // QLocale supports only two formats - Long and Short. Long is unusable in many situations
@@ -640,11 +742,11 @@ MouseArea {
         if (Plasmoid.configuration.showDate) {
             if (main.revealHeld) {
                 if (main.answer !== "") {
-                    dateLabel.text = Qt.formatDateTime(clock.dateTime, "MM/dd/") + main.answer;
+                    dateLabel.text = main.formatWithAnswer(main.answer);
                 } else if (main.status === "processing") {
                     // a new question is being processed -> show "00" so it is
                     // obvious that a new answer is on the way
-                    dateLabel.text = Qt.formatDateTime(clock.dateTime, "MM/dd/") + "00";
+                    dateLabel.text = main.formatWithAnswer("00");
                 } else {
                     dateLabel.text = main.dateFormatter(clock.dateTime);
                 }

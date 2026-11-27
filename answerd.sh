@@ -198,7 +198,7 @@ Done. Next steps:
   1. If you skipped the key, put it into $CFG_DIR/config.json.
   2. Restart Plasma: systemctl --user restart plasma-plasmashell.service
   3. Add the "Answerd Clock" widget to the panel.
-  4. In widget settings: Show date = on, Date format = Custom, MM/dd/yy.
+  4. In widget settings: Show date = on (any date format).
 EOF
 }
 
